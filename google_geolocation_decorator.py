@@ -3,7 +3,8 @@ import time
 import requests
 from elasticsearch import Elasticsearch
 
-from config import INDEX, DOC_TYPE, logger
+from config import logger
+from index_config import INDEX, DOC_TYPE
 
 GOOGLE_URL = 'http://maps.googleapis.com/maps/api/geocode/json'
 

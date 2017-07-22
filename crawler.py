@@ -3,8 +3,8 @@ import time
 import requests
 from elasticsearch import Elasticsearch
 
-import config
-from config import apikey
+import index_config
+import private
 from config import logger
 
 base_catalog_url = "http://services.wine.com/api/beta2/service.svc/json/catalog"
@@ -46,7 +46,7 @@ def crawl(api_key, limit=0):
             # not support nested objects currently
             flattened = join_nested(wine, parent_key='ProductAttributes', child_key='Name')
             wine['ProductAttributesNames'] = flattened
-            es.index(index=config.INDEX, doc_type=config.DOC_TYPE, id=wine['Id'], body=wine)
+            es.index(index=index_config.INDEX, doc_type=index_config.DOC_TYPE, id=wine['Id'], body=wine)
 
         logger.info("Read %s wines from Wine.com so far" % len(wines_json))
         offset = offset + page_size
@@ -62,4 +62,4 @@ def join_nested(wine, parent_key, child_key):
 
 
 if __name__ == '__main__':
-    crawl(apikey, limit=0)
+    crawl(private.apikey, limit=0)
