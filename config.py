@@ -1,8 +1,9 @@
 import logging
+# Create a logger object.
+import sys
 
 import coloredlogs
 
-# Create a logger object.
 logger = logging.getLogger(__name__)
 
-coloredlogs.install(level='DEBUG', logger=logger)
+coloredlogs.install(stream=sys.stdout, level='DEBUG', logger=logger)
