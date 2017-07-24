@@ -1,7 +1,7 @@
 import time
 
 import requests
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, helpers
 
 from config import logger
 from index_config import INDEX, DOC_TYPE
@@ -53,9 +53,9 @@ def fetch_address(address):
 
 def decorate(num_calls=10):
     es = Elasticsearch()
-    # this loop is necessary so that we can fetch one item without location, update the index accordingly and refresh
-    # it which again is necessary to avoid duplicate calls to the google api with the same address
-    # note that we could also use a while loop but this gives a little more explict control on the number of requests.
+    # This loop is necessary so that we can fetch one item without location, update the index accordingly and refresh
+    # it. This is necessary to avoid duplicate calls to the google api with the same address.
+    # We could also use a while loop but this gives a little more explict control on the number of requests.
     for i in range(0, num_calls):
         # fetch indexed item without location field
         hits = es.search(index=INDEX, body=has_no_location_query(), size=1)
@@ -76,13 +76,15 @@ def decorate(num_calls=10):
                                    body=is_located_at_query(appellation_name=name, appellation_region=region_name),
                                    size=10000)
             # update the location field for all vineyards that are in that region
+            bulk = []
             for entity in located_at["hits"]['hits']:
                 entity_source = entity['_source']
                 if geo_location['latitude'] is not None:
                     entity_source['location'] = {"lat": geo_location['latitude'], "lon": geo_location['longitude']}
                 else:
                     entity_source['location'] = {"lat": -1, "lon": -1}
-                es.index(index=INDEX, doc_type=DOC_TYPE, id=entity_source['Id'], body=entity_source)
+                bulk.append({'_index': INDEX, '_type': DOC_TYPE, '_id': entity_source['Id'], '_source': entity_source})
+            helpers.bulk(es, bulk, chunk_size=len(bulk))
         es.indices.refresh(index=INDEX)
 
 
